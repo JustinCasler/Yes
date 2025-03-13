@@ -55,13 +55,6 @@ class HomeViewModel: ObservableObject {
         if user.rerolls > 0 {
             user.rerolls -= 1
             
-            let newPhrase = Phrases.all.randomElement() ?? "default"
-            let newVariants = generateLetterVariants(for: newPhrase)
-            if let defaults = UserDefaults(suiteName: "group.offline.yes") {
-                defaults.set(newVariants, forKey: "savedLetterVariants")
-            }
-            
-            // Reset done status when performing a reroll.
             user.done = false
             
             userService.updateUser(user) { error in
@@ -70,12 +63,9 @@ class HomeViewModel: ObservableObject {
                 }
             }
             
-            DispatchQueue.main.async {
-                self.currentPhrase = newPhrase
-                self.letterVariants = newVariants
+            PhraseUpdater.updateForNewDay(user: &user) {
             }
-        } else {
-            // Optionally notify the user that no rerolls are available.
+            setPhrasesAndVarients(user: user)
         }
     }
     
@@ -83,8 +73,16 @@ class HomeViewModel: ObservableObject {
     // update lastSignIn and done flag, and push these changes to Firestore.
     func updatePhraseOnNewDay() {
         let calendar = Calendar.current
-        if !calendar.isDateInToday(user.lastSignIn) {
 
+        // Check if the user's lastSignIn is not today.
+        if !calendar.isDateInToday(user.lastSignIn) {
+            // Update the streak: if last sign-in was yesterday, increment streak, otherwise reset to 1.
+            if calendar.isDateInYesterday(user.lastSignIn) {
+                user.streak += 1
+            } else {
+                user.streak = 1
+            }
+            // Update lastSignIn to now.
             user.lastSignIn = Date()
             userService.updateUser(user) { error in
                 if let error = error {
@@ -92,42 +90,69 @@ class HomeViewModel: ObservableObject {
                 }
             }
         }
+        
+        // Check if the user's updatedPhraseDate is today.
+        if !calendar.isDateInToday(user.updatedPhraseDate) {
+            // Not updated for today – perform daily update.
+            PhraseUpdater.updateForNewDay(user: &user) {
+                // After updating for a new day, update the updatedPhraseDate.
+                self.user.updatedPhraseDate = Date()
+                self.userService.updateUser(self.user) { error in
+                    if let error = error {
+                        print("Error updating user after daily update: \(error.localizedDescription)")
+                    }
+                }
+                print("Daily update performed. Exiting updatePhraseOnNewDay.")
+            }
+        }
+        
+        // If the user already updated the phrase today, continue with the normal flow.
+        setPhrasesAndVarients(user: user)
+    }
+
+    func setPhrasesAndVarients(user: User) {
+        // Get the shared UserDefaults instance.
+        guard let defaults = UserDefaults(suiteName: "group.offline.yes") else { return }
+        
         var phrase: String?
-        if let defaults = UserDefaults(suiteName: "group.offline.yes") {
-            if let storedPhraseIndex = defaults.value(forKey: "currentPhraseIndex") as? Int,
-               storedPhraseIndex < Phrases.all.count {
-                phrase = Phrases.all[storedPhraseIndex]
-            } else {
-                // No stored phrase index found – pick a new phrase.
-                let allIndices = Array(0..<Phrases.all.count)
-                let usedIndices = user.phrases
-                let availableIndices = allIndices.filter { !usedIndices.contains($0) }
-                let chosenIndex: Int = availableIndices.randomElement() ?? allIndices.randomElement()!
-                defaults.set(chosenIndex, forKey: "currentPhraseIndex")
-                phrase = Phrases.all[chosenIndex]
+        // Try to retrieve the stored phrase index.
+        if let storedPhraseIndex = defaults.value(forKey: "currentPhraseIndex") as? Int,
+           storedPhraseIndex < Phrases.all.count {
+            phrase = Phrases.all[storedPhraseIndex]
+        } else {
+            print("No stored currentPhraseIndex")
+            // No stored phrase index found – pick a new phrase.
+            let allIndices = Array(0..<Phrases.all.count)
+            let usedIndices = user.phrases
+            let availableIndices = allIndices.filter { !usedIndices.contains($0) }
+            let chosenIndex: Int = availableIndices.randomElement() ?? allIndices.randomElement()!
+            defaults.set(chosenIndex, forKey: "currentPhraseIndex")
+            phrase = Phrases.all[chosenIndex]
+        }
+        
+        // If we have a valid phrase, update the UI and check for letter variants.
+        if let validPhrase = phrase {
+            DispatchQueue.main.async {
+                self.currentPhrase = validPhrase
             }
             
-            if let validPhrase = phrase {
+            // Check for saved letter variants.
+            if let storedVariants = defaults.value(forKey: "savedLetterVariants") as? [Int] {
                 DispatchQueue.main.async {
-                    self.currentPhrase = validPhrase
+                    self.letterVariants = storedVariants
                 }
-                
-                // Now, check for saved letter variants.
-                if let storedVariants = defaults.value(forKey: "savedLetterVariants") as? [Int] {
-                    DispatchQueue.main.async {
-                        self.letterVariants = storedVariants
-                    }
-                } else {
-                    // No variants stored – generate new ones.
-                    let newVariants = generateLetterVariants(for: validPhrase)
-                    defaults.set(newVariants, forKey: "savedLetterVariants")
-                    DispatchQueue.main.async {
-                        self.letterVariants = newVariants
-                    }
+            } else {
+                print("No stored savedLetterVariants")
+                // No variants stored – generate new ones.
+                let newVariants = generateLetterVariants(for: validPhrase)
+                defaults.set(newVariants, forKey: "savedLetterVariants")
+                DispatchQueue.main.async {
+                    self.letterVariants = newVariants
                 }
             }
         }
     }
+
     
     // Toggle the done status. If toggled on, add the current phrase's index to the user's phrases array;
     // if toggled off, remove it, then update Firestore.

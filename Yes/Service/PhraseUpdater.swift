@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import FirebaseAuth
+import WidgetKit
 
 struct PhraseUpdater {
     static func updateForNewDay(user: inout User, completion: @escaping () -> Void = {}) {
@@ -22,9 +24,8 @@ struct PhraseUpdater {
         if let defaults = UserDefaults(suiteName: "group.offline.yes") {
             defaults.set(chosenIndex, forKey: "currentPhraseIndex")
         }
-
         let newPhrase = Phrases.all[chosenIndex]
-
+        print("newPhrase: ", newPhrase)
         // Generate letter variants and store them.
         let newVariants = PhraseUpdater.generateLetterVariants(for: newPhrase)
         if let defaults = UserDefaults(suiteName: "group.offline.yes") {
@@ -32,6 +33,7 @@ struct PhraseUpdater {
         }
 
         // Call the completion handler if provided.
+        WidgetCenter.shared.reloadTimelines(ofKind: "YesWidget")
         completion()
     }
     

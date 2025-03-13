@@ -13,6 +13,7 @@ import CryptoKit
 import FirebaseMessaging
 
 class AuthViewModel: ObservableObject {
+    static let shared = AuthViewModel()
     @Published var userSession: FirebaseAuth.User?
     @Published var didAuthenticateUser = false
     @Published var currentUser: User?
@@ -26,7 +27,6 @@ class AuthViewModel: ObservableObject {
     init(){
         self.userSession = Auth.auth().currentUser
         self.fetchUser()
-        print("authviewmodel user session :", self.userSession)
     }
     
     func signOut() {
@@ -39,7 +39,6 @@ class AuthViewModel: ObservableObject {
         service.fetchUser(withUid: uid) { user in
             self.currentUser = user
         }
-        print("authviewmodel reroll :", uid, self.currentUser)
     }
     
     func backgroundFetchUser(completion: @escaping (User?) -> Void) {
@@ -51,7 +50,6 @@ class AuthViewModel: ObservableObject {
             self.currentUser = user
             completion(user)
         }
-        print("authviewmodel reroll:", uid, self.currentUser)
     }
     
     // MARK: - Apple Sign In Integration
@@ -135,6 +133,7 @@ class AuthViewModel: ObservableObject {
                     "done": false,
                     "fcmToken": Messaging.messaging().fcmToken ?? "",
                     "timezone": TimeZone.current.identifier,
+                    "updatedPhraseDate": jan1_2025  // Initialize updatedPhraseDate
                 ]
                 docRef.setData(data) { error in
                     if let error = error {
@@ -157,6 +156,7 @@ class AuthViewModel: ObservableObject {
                 print("User document already exists.")
                 completion()
             } else {
+                let jan1_2025 = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 1))!
                 let data: [String: Any] = [
                     "id": user.uid,
                     "fullName": "User",
@@ -169,6 +169,7 @@ class AuthViewModel: ObservableObject {
                     "done": false,
                     "fcmToken": Messaging.messaging().fcmToken ?? "",
                     "timezone": TimeZone.current.identifier,
+                    "updatedPhraseDate": jan1_2025  // Initialize updatedPhraseDate
                 ]
                 docRef.setData(data) { error in
                     if let error = error {
@@ -181,6 +182,7 @@ class AuthViewModel: ObservableObject {
             }
         }
     }
+
     
     // MARK: - Update FCM Token & Timezone After Login
     func updateUserFCMTokenAndTimezone() {

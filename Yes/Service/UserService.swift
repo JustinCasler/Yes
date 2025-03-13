@@ -22,16 +22,26 @@ struct UserService {
     }
     
     func updateUser(_ user: User, completion: ((Error?) -> Void)? = nil) {
+        guard let userID = user.id else {
+            completion?(NSError(domain: "UserErrorDomain", code: 0, userInfo: [NSLocalizedDescriptionKey: "User ID is missing"]))
+            return
+        }
+        
         let db = Firestore.firestore()
         let data: [String: Any] = [
+            "fullName": user.fullName,
+            "streak": user.streak,
+            "phrases": user.phrases,
             "rerolls": user.rerolls,
             "rerollDate": user.rerollDate,
             "lastSignIn": user.lastSignIn,
-            "phrases": user.phrases,
-            "done": user.done
+            "done": user.done,
+            "fcmToken": user.fcmToken ?? "",
+            "timezone": user.timezone ?? "",
+            "updatedPhraseDate": user.updatedPhraseDate
         ]
         
-        db.collection("users").document(user.id!).updateData(data) { error in
+        db.collection("users").document(userID).updateData(data) { error in
             completion?(error)
         }
     }

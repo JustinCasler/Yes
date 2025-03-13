@@ -33,13 +33,12 @@ exports.sendSilentPush = onSchedule(
               {timeZone: userTimezone});
           const hours = new Date(userTime).getHours();
           // const minutes = new Date(userTime).getMinutes();
-          console.log();
           if (hours >= 0 && hours <= 23) {
             const payload = {
               data: {dailyRefresh: "true"},
               apns: {
-                headers: {"apns-priority": "10"},
-                payload: {aps: {"content-available": 1}},
+                headers: {"apns-priority": "5"},
+                payload: {aps: {"content_available": true}},
               },
             };
 

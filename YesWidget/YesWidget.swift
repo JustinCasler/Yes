@@ -53,7 +53,6 @@ struct Provider: TimelineProvider {
     func getCurrentPhrase() -> String {
         let defaults = UserDefaults(suiteName: "group.offline.yes")
         let index = defaults?.integer(forKey: "currentPhraseIndex") ?? 0
-        print("index: ", index)
         let safeIndex = index % Phrases.all.count
         return Phrases.all[safeIndex]
     }

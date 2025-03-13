@@ -39,9 +39,9 @@
 		BB308B872D66F10E00D552A9 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = BB308B862D66F10E00D552A9 /* FirebaseStorage */; };
 		BB308B892D66F10E00D552A9 /* FirebaseStorageCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = BB308B882D66F10E00D552A9 /* FirebaseStorageCombine-Community */; };
 		BB308B8B2D66F10E00D552A9 /* FirebaseVertexAI in Frameworks */ = {isa = PBXBuildFile; productRef = BB308B8A2D66F10E00D552A9 /* FirebaseVertexAI */; };
+		BB343FB82D7BFAA200487488 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB343FB72D7BFAA200487488 /* GoogleService-Info.plist */; };
 		BB736AED2D6B98F8001CF1B1 /* PhoneAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB736AEC2D6B98F8001CF1B1 /* PhoneAuthView.swift */; };
 		BBD293EF2D7168DB00C25C70 /* PhraseUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD293EE2D7168DB00C25C70 /* PhraseUpdater.swift */; };
-		BBE8C17B2D6C2EFF0003F9E8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BBE8C17A2D6C2EFF0003F9E8 /* GoogleService-Info.plist */; };
 		BBE8C19C2D6ECB770003F9E8 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBE8C1842D6EC9290003F9E8 /* WidgetKit.framework */; };
 		BBE8C19D2D6ECB770003F9E8 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBE8C1862D6EC9290003F9E8 /* SwiftUI.framework */; };
 		BBE8C1A02D6ECB780003F9E8 /* YesWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE8C19F2D6ECB780003F9E8 /* YesWidgetBundle.swift */; };
@@ -98,9 +98,10 @@
 		BB1880132D62F05D00B95314 /* TallyMarksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TallyMarksView.swift; sourceTree = "<group>"; };
 		BB308B542D66E66700D552A9 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		BB308B582D66EFB400D552A9 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		BB343FB62D7BF5BF00487488 /* YesDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = YesDebug.entitlements; sourceTree = "<group>"; };
+		BB343FB72D7BFAA200487488 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		BB736AEC2D6B98F8001CF1B1 /* PhoneAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneAuthView.swift; sourceTree = "<group>"; };
 		BBD293EE2D7168DB00C25C70 /* PhraseUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhraseUpdater.swift; sourceTree = "<group>"; };
-		BBE8C17A2D6C2EFF0003F9E8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		BBE8C17E2D6C323B0003F9E8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		BBE8C1842D6EC9290003F9E8 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		BBE8C1862D6EC9290003F9E8 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -272,6 +273,7 @@
 		BBFF46362D59975100596592 /* Yes */ = {
 			isa = PBXGroup;
 			children = (
+				BB343FB62D7BF5BF00487488 /* YesDebug.entitlements */,
 				BBE8C17E2D6C323B0003F9E8 /* Info.plist */,
 				BBFF46392D59975100596592 /* ContentView.swift */,
 				BBFF46582D5C4C1C00596592 /* App */,
@@ -279,7 +281,7 @@
 				BBFF46552D5C4B9300596592 /* Model */,
 				BBF592E62D681B9200B49CFB /* Service */,
 				BBFF463B2D59975700596592 /* Assets.xcassets */,
-				BBE8C17A2D6C2EFF0003F9E8 /* GoogleService-Info.plist */,
+				BB343FB72D7BFAA200487488 /* GoogleService-Info.plist */,
 				BBFF463D2D59975700596592 /* Preview Content */,
 			);
 			path = Yes;
@@ -481,7 +483,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BBE8C17B2D6C2EFF0003F9E8 /* GoogleService-Info.plist in Resources */,
+				BB343FB82D7BFAA200487488 /* GoogleService-Info.plist in Resources */,
 				BBFF463F2D59975700596592 /* Preview Assets.xcassets in Resources */,
 				BBFF463C2D59975700596592 /* Assets.xcassets in Resources */,
 			);
@@ -714,7 +716,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Yes/Yes.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Yes/YesDebug.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Yes/Preview Content\"";

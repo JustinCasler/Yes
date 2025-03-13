@@ -19,4 +19,5 @@ struct User: Identifiable, Decodable {
     var done: Bool
     var fcmToken: String?
     var timezone: String?
+    var updatedPhraseDate: Date
 }

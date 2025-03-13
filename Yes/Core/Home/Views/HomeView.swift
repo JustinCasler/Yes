@@ -114,6 +114,7 @@ struct HomeView: View {
      rerolls: 2,
      rerollDate: Date(),
      lastSignIn: Date(),
-     done: false
+     done: false,
+     updatedPhraseDate: Date()
  ))
  }
