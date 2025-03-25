@@ -65,29 +65,34 @@ struct YesWidgetEntryView: View {
     let wordSpacing: CGFloat = 16
     let imageSize: CGFloat = 24
     
-    // Retrieve letter variants from the shared user defaults
+    // Retrieve letter variants from shared user defaults
     var letterVariants: [Int] {
-        let defaults = UserDefaults(suiteName: "group.offline.yes") // Update to your App Group identifier
+        let defaults = UserDefaults(suiteName: "group.offline.yes")
         return defaults?.array(forKey: "savedLetterVariants") as? [Int] ?? []
     }
     
+    // Precompute words with their starting global letter index.
+    var wordsWithStartIndices: [(word: String, startIndex: Int)] {
+        var result: [(word: String, startIndex: Int)] = []
+        var currentIndex = 0
+        let words = entry.phrase.components(separatedBy: " ")
+        for word in words {
+            result.append((word: word, startIndex: currentIndex))
+            currentIndex += word.count // note: if you need to account for spaces, adjust here.
+        }
+        return result
+    }
+    
     var body: some View {
-        ZStack {
-            /* Background Image
-            Image("Paper")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .edgesIgnoringSafeArea(.all) // Ensures the image covers the entire widget
-            */
-            // Foreground Content
-            VStack(alignment: .center, spacing: wordSpacing) {
-                ForEach(Array(entry.phrase.components(separatedBy: " ").enumerated()), id: \.offset) { wordIndex, word in
-                    // Compute an offset based on previous words (if needed)
-                    let offset = entry.phrase.components(separatedBy: " ").prefix(wordIndex).reduce(0) { $0 + $1.count }
+        if #available(iOS 16.0, *) {
+            FlowLayout(spacing: wordSpacing) {
+                ForEach(Array(wordsWithStartIndices.enumerated()), id: \.offset) { index, wordTuple in
+                    let word = wordTuple.word
+                    let wordStartIndex = wordTuple.startIndex
                     HStack(spacing: letterSpacing) {
                         ForEach(Array(word.enumerated()), id: \.offset) { letterIndex, letter in
                             if letter.isLetter || letter.isNumber {
-                                let globalIndex = offset + letterIndex
+                                let globalIndex = wordStartIndex + letterIndex
                                 let variant = (globalIndex < letterVariants.count) ? letterVariants[globalIndex] : 1
                                 let imageName = "\(String(letter).lowercased())_\(variant)"
                                 Image(imageName)
@@ -96,7 +101,27 @@ struct YesWidgetEntryView: View {
                             }
                         }
                     }
-                    .frame(maxWidth: .infinity, alignment: .center)
+                }
+            }
+            .padding()
+        } else {
+            // Fallback for earlier iOS versions (if needed)
+            VStack(alignment: .leading, spacing: wordSpacing) {
+                ForEach(Array(wordsWithStartIndices.enumerated()), id: \.offset) { index, wordTuple in
+                    let word = wordTuple.word
+                    let wordStartIndex = wordTuple.startIndex
+                    HStack(spacing: letterSpacing) {
+                        ForEach(Array(word.enumerated()), id: \.offset) { letterIndex, letter in
+                            if letter.isLetter || letter.isNumber {
+                                let globalIndex = wordStartIndex + letterIndex
+                                let variant = (globalIndex < letterVariants.count) ? letterVariants[globalIndex] : 1
+                                let imageName = "\(String(letter).lowercased())_\(variant)"
+                                Image(imageName)
+                                    .resizable()
+                                    .frame(width: imageSize, height: imageSize)
+                            }
+                        }
+                    }
                 }
             }
             .padding()
@@ -109,20 +134,23 @@ struct YesWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
-            if #available(iOS 17.0, *) {
-                YesWidgetEntryView(entry: entry)
-                    .containerBackground(.fill.tertiary, for: .widget)
-            } else {
-                YesWidgetEntryView(entry: entry)
-                    .padding()
-                    .background(Color(.systemBackground))
-            }
+            YesWidgetEntryView(entry: entry)
+                .widgetBackground {
+                    Image("Paper_Widget")
+                        .resizable()
+                        .scaledToFill()
+                        .scaleEffect(2)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
+                        .ignoresSafeArea()
+                }
         }
         .configurationDisplayName("Daily Phrase")
         .description("Displays a daily phrase from your list.")
         .supportedFamilies([.systemMedium])
     }
 }
+
 
 #Preview(as: .systemMedium) {
     YesWidget()

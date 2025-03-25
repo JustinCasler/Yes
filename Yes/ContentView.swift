@@ -10,15 +10,23 @@ import UIKit
 
 struct ContentView: View {
     @EnvironmentObject var viewModel: AuthViewModel
+
     var body: some View {
         Group {
-            if let user = viewModel.currentUser { // Unwrapping the user
-                AuthenticatedContentView(user: user)
+            if viewModel.userSession != nil {
+                // User is signed in. However, we wait until the full user data is available.
+                if let user = viewModel.currentUser {
+                    AuthenticatedContentView(user: user)
+                } else {
+                    // Optionally, show a loading indicator until user data is fetched.
+                    ProgressView("Loading...")
+                }
             } else {
-                // Show the login screen if not signed in.
+                // Show the login screen if no user session exists.
                 NavigationView {
                     LoginView()
                 }
+                .navigationViewStyle(StackNavigationViewStyle())
             }
         }
     }

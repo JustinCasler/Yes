@@ -40,7 +40,10 @@
 		BB308B892D66F10E00D552A9 /* FirebaseStorageCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = BB308B882D66F10E00D552A9 /* FirebaseStorageCombine-Community */; };
 		BB308B8B2D66F10E00D552A9 /* FirebaseVertexAI in Frameworks */ = {isa = PBXBuildFile; productRef = BB308B8A2D66F10E00D552A9 /* FirebaseVertexAI */; };
 		BB343FB82D7BFAA200487488 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB343FB72D7BFAA200487488 /* GoogleService-Info.plist */; };
+		BB65AF002D8E7556000B4A36 /* OTPTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB65AEFF2D8E7556000B4A36 /* OTPTextField.swift */; };
 		BB736AED2D6B98F8001CF1B1 /* PhoneAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB736AEC2D6B98F8001CF1B1 /* PhoneAuthView.swift */; };
+		BBCB97CB2D90A5F2004BAEB4 /* FlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCB97CA2D90A5F1004BAEB4 /* FlowLayout.swift */; };
+		BBCB97CD2D90A956004BAEB4 /* WidgetBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCB97CC2D90A955004BAEB4 /* WidgetBackground.swift */; };
 		BBD293EF2D7168DB00C25C70 /* PhraseUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD293EE2D7168DB00C25C70 /* PhraseUpdater.swift */; };
 		BBE8C19C2D6ECB770003F9E8 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBE8C1842D6EC9290003F9E8 /* WidgetKit.framework */; };
 		BBE8C19D2D6ECB770003F9E8 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBE8C1862D6EC9290003F9E8 /* SwiftUI.framework */; };
@@ -100,7 +103,10 @@
 		BB308B582D66EFB400D552A9 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		BB343FB62D7BF5BF00487488 /* YesDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = YesDebug.entitlements; sourceTree = "<group>"; };
 		BB343FB72D7BFAA200487488 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		BB65AEFF2D8E7556000B4A36 /* OTPTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OTPTextField.swift; sourceTree = "<group>"; };
 		BB736AEC2D6B98F8001CF1B1 /* PhoneAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneAuthView.swift; sourceTree = "<group>"; };
+		BBCB97CA2D90A5F1004BAEB4 /* FlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
+		BBCB97CC2D90A955004BAEB4 /* WidgetBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBackground.swift; sourceTree = "<group>"; };
 		BBD293EE2D7168DB00C25C70 /* PhraseUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhraseUpdater.swift; sourceTree = "<group>"; };
 		BBE8C17E2D6C323B0003F9E8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		BBE8C1842D6EC9290003F9E8 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -229,6 +235,8 @@
 				BBE8C1A12D6ECB780003F9E8 /* YesWidget.swift */,
 				BBE8C1A32D6ECB7D0003F9E8 /* Assets.xcassets */,
 				BBE8C1A52D6ECB7D0003F9E8 /* Info.plist */,
+				BBCB97CA2D90A5F1004BAEB4 /* FlowLayout.swift */,
+				BBCB97CC2D90A955004BAEB4 /* WidgetBackground.swift */,
 			);
 			path = YesWidget;
 			sourceTree = "<group>";
@@ -354,6 +362,7 @@
 			children = (
 				BBFF465F2D5C4C9F00596592 /* LoginView.swift */,
 				BB736AEC2D6B98F8001CF1B1 /* PhoneAuthView.swift */,
+				BB65AEFF2D8E7556000B4A36 /* OTPTextField.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -496,7 +505,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBCB97CD2D90A956004BAEB4 /* WidgetBackground.swift in Sources */,
 				BBE8C1AC2D6FECA00003F9E8 /* Phrases.swift in Sources */,
+				BBCB97CB2D90A5F2004BAEB4 /* FlowLayout.swift in Sources */,
 				BBE8C1A02D6ECB780003F9E8 /* YesWidgetBundle.swift in Sources */,
 				BBE8C1A22D6ECB780003F9E8 /* YesWidget.swift in Sources */,
 			);
@@ -515,6 +526,7 @@
 				BB1880122D62F00E00B95314 /* TallyShapes.swift in Sources */,
 				BBFF463A2D59975100596592 /* ContentView.swift in Sources */,
 				BB308B592D66EFB400D552A9 /* AuthViewModel.swift in Sources */,
+				BB65AF002D8E7556000B4A36 /* OTPTextField.swift in Sources */,
 				BBF592EB2D682B9500B49CFB /* HomeViewModel.swift in Sources */,
 				BBF592E82D681BB500B49CFB /* UserService.swift in Sources */,
 				BBD293EF2D7168DB00C25C70 /* PhraseUpdater.swift in Sources */,

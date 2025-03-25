@@ -12,14 +12,27 @@ import AuthenticationServices
 
 struct LoginView: View {
     @EnvironmentObject var viewModel: AuthViewModel
-    
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+
     var body: some View {
         ZStack {
-            Image("Composition_Notebook")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-            
+            if horizontalSizeClass == .regular {
+                // Layout for iPad or larger screens
+                Image("Marble_Background")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                Image("Composition_Notebook")
+                    .resizable()
+                    .scaledToFit()
+                    .ignoresSafeArea()
+            } else {
+                // Layout for iPhones (compact size)
+                Image("Composition_Notebook")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+            }
             VStack {
                 Spacer() // Push content down
                 
