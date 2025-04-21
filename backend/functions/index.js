@@ -61,7 +61,6 @@ exports.sendSilentPush = onSchedule(
           }
         });
       } catch (error) {
-        console.error("❌ Error fetching users:", error);
         console.error(`❌ Error fetching users:
             ${error.message || error}`);
       }
@@ -69,3 +68,58 @@ exports.sendSilentPush = onSchedule(
       return null;
     },
 );
+
+exports.sendDailyStreakNotification = functions.pubsub.schedule("every 1 hours").onRun(async () => {
+  const db = admin.firestore();
+
+  try {
+    console.info("⏰ Running daily streak notification job...");
+
+    const usersSnapshot = await db.collection("users").get();
+    console.info(`👥 Found ${usersSnapshot.size} users`);
+
+    usersSnapshot.forEach(async (userDoc) => {
+      const userData = userDoc.data();
+      const userToken = userData.fcmToken;
+      const userTimezone = userData.timezone;
+      const streaks = userData.streaks;
+
+      if (!userToken || !userTimezone || streaks === undefined) {
+        console.warn(`⚠️ Skipping user ${userDoc.id}: Missing required fields`);
+        return;
+      }
+
+      const userTime = new Date().toLocaleString("en-US", {
+        timeZone: userTimezone,
+      });
+      const currentHour = new Date(userTime).getHours();
+
+      if (currentHour === 10) {
+        const nextStreak = parseInt(streaks, 10) + 1;
+
+        const payload = {
+          notification: {
+            title: "Say Yes to Life Today",
+            body: `Complete your challenge to reach ${nextStreak} in a row`,
+          },
+          token: userToken,
+        };
+
+        try {
+          console.info(`📨 Sending notification to ${userDoc.id} (streak: ${streaks})`);
+          await admin.messaging().send(payload);
+          console.info(`✅ Notification sent to ${userDoc.id}`);
+        } catch (error) {
+          console.error(`❌ Error sending to ${userDoc.id}: ${error.message}`);
+        }
+      } else {
+        console.info(`🕙 Not 10 AM yet for ${userDoc.id} (hour: ${currentHour})`);
+      }
+    });
+  } catch (error) {
+    console.error(`❌ Failed to send streak notifications: ${error.message}`);
+  }
+
+  return null;
+});
+

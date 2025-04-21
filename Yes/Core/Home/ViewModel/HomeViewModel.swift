@@ -73,7 +73,7 @@ class HomeViewModel: ObservableObject {
     // update lastSignIn and done flag, and push these changes to Firestore.
     func updatePhraseOnNewDay() {
         let calendar = Calendar.current
-
+        
         // Check if the user's lastSignIn is not today.
         if !calendar.isDateInToday(user.lastSignIn) {
             // Update the streak: if last sign-in was yesterday, increment streak, otherwise reset to 1.
@@ -120,7 +120,6 @@ class HomeViewModel: ObservableObject {
            storedPhraseIndex < Phrases.all.count {
             phrase = Phrases.all[storedPhraseIndex]
         } else {
-            print("No stored currentPhraseIndex")
             // No stored phrase index found – pick a new phrase.
             let allIndices = Array(0..<Phrases.all.count)
             let usedIndices = user.phrases
@@ -142,7 +141,6 @@ class HomeViewModel: ObservableObject {
                     self.letterVariants = storedVariants
                 }
             } else {
-                print("No stored savedLetterVariants")
                 // No variants stored – generate new ones.
                 let newVariants = generateLetterVariants(for: validPhrase)
                 defaults.set(newVariants, forKey: "savedLetterVariants")
