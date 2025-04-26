@@ -90,14 +90,6 @@ struct HomeView: View {
                                 Image(systemName: viewModel.user.done ? "checkmark.square" : "square")
                             }
                         }
-                        
-                        Button(action: {
-                            authViewModel.signOut()
-                        }) {
-                            HStack {
-                                Text("Sign out")
-                            }
-                        }
                     }
                     .foregroundColor(.black)
                     .font(.custom("Bradley Hand", size: 40))

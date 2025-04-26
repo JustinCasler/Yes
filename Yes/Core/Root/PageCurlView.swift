@@ -10,67 +10,107 @@ import SwiftUI
 // MARK: - PageCurlView: UIViewControllerRepresentable wrapping UIPageViewController
 struct PageCurlView: UIViewControllerRepresentable {
     @Binding var currentPage: Int
-    var pages: [UIViewController]
-    
+    var pages: [UIViewController]  // this can still be a let or var
+
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
-    
+
     func makeUIViewController(context: Context) -> UIPageViewController {
         let pageVC = UIPageViewController(
             transitionStyle: .pageCurl,
             navigationOrientation: .horizontal,
             options: nil
         )
-        // Disable double-sided mode to avoid showing a blank backside.
         pageVC.isDoubleSided = false
         pageVC.dataSource = context.coordinator
-        pageVC.delegate = context.coordinator
-        
-        // Set the initial page (HomeView).
-        pageVC.setViewControllers([pages[currentPage]], direction: .forward, animated: false, completion: nil)
+        pageVC.delegate   = context.coordinator
+
+        // use the *coordinator’s* controllers, not `self.pages` directly
+        pageVC.setViewControllers(
+            [context.coordinator.controllers[currentPage]],
+            direction: .forward,
+            animated: false,
+            completion: nil
+        )
         return pageVC
     }
-    
-    func updateUIViewController(_ uiViewController: UIPageViewController, context: Context) {
-        // Only update if the visible controller isn’t already the desired one.
-        if let currentVC = uiViewController.viewControllers?.first, currentVC != pages[currentPage] {
-            let direction: UIPageViewController.NavigationDirection = (currentPage == 0) ? .reverse : .forward
-            uiViewController.setViewControllers([pages[currentPage]], direction: direction, animated: true, completion: nil)
+
+    func updateUIViewController(
+        _ uiViewController: UIPageViewController,
+        context: Context
+    ) {
+        // 1) If going back to page 0 and we’re already on it, bail:
+        if currentPage == 0,
+           let visible = uiViewController.viewControllers?.first,
+           visible is UIHostingController<HomeView> {
+            return
         }
+
+        // 2) Only update if it’s a different controller instance:
+        guard let visible = uiViewController.viewControllers?.first,
+              visible !== context.coordinator.controllers[currentPage]
+        else { return }
+
+        let direction: UIPageViewController.NavigationDirection =
+            (currentPage == 0) ? .reverse : .forward
+
+        uiViewController.setViewControllers(
+            [context.coordinator.controllers[currentPage]],
+            direction: direction,
+            animated: true,
+            completion: nil
+        )
     }
-    
+
     class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
         var parent: PageCurlView
-        
+        let controllers: [UIViewController]
+
         init(_ pageCurlView: PageCurlView) {
-            self.parent = pageCurlView
+            self.parent      = pageCurlView
+            // Capture the pages *once* here
+            self.controllers = pageCurlView.pages
         }
-        
-        // Return the previous view controller only if available.
-        func pageViewController(_ pageViewController: UIPageViewController, viewControllerBefore viewController: UIViewController) -> UIViewController? {
-            guard let index = parent.pages.firstIndex(of: viewController), index > 0 else { return nil }
-            return parent.pages[index - 1]
+
+        func pageViewController(
+            _ pvc: UIPageViewController,
+            viewControllerBefore vc: UIViewController
+        ) -> UIViewController? {
+            guard let idx = controllers.firstIndex(of: vc), idx > 0 else { return nil }
+            return controllers[idx - 1]
         }
-        
-        // Return the next view controller only if available.
-        func pageViewController(_ pageViewController: UIPageViewController, viewControllerAfter viewController: UIViewController) -> UIViewController? {
-            guard let index = parent.pages.firstIndex(of: viewController), index < parent.pages.count - 1 else { return nil }
-            return parent.pages[index + 1]
+
+        func pageViewController(
+            _ pvc: UIPageViewController,
+            viewControllerAfter vc: UIViewController
+        ) -> UIViewController? {
+            guard let idx = controllers.firstIndex(of: vc),
+                  idx < controllers.count - 1
+            else { return nil }
+            return controllers[idx + 1]
         }
-        
-        // Update the current page when the transition finishes.
-        func pageViewController(_ pageViewController: UIPageViewController, didFinishAnimating finished: Bool, previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
-            if completed, let visibleVC = pageViewController.viewControllers?.first, let index = parent.pages.firstIndex(of: visibleVC) {
-                parent.currentPage = index
+
+        func pageViewController(
+            _ pvc: UIPageViewController,
+            didFinishAnimating finished: Bool,
+            previousViewControllers: [UIViewController],
+            transitionCompleted completed: Bool
+        ) {
+            if completed,
+               let visible = pvc.viewControllers?.first,
+               let idx = controllers.firstIndex(of: visible) {
+                parent.currentPage = idx
             }
         }
-        
-        // For page curl transitions, provide the spine location and ensure only one view controller is visible.
-        func pageViewController(_ pageViewController: UIPageViewController, spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
-            pageViewController.isDoubleSided = false
-            if let currentVC = pageViewController.viewControllers?.first {
-                pageViewController.setViewControllers([currentVC], direction: .forward, animated: false, completion: nil)
+
+        func pageViewController(
+            _ pvc: UIPageViewController,
+            spineLocationFor orientation: UIInterfaceOrientation
+        ) -> UIPageViewController.SpineLocation {
+            pvc.isDoubleSided = false
+            if let current = pvc.viewControllers?.first {
+                pvc.setViewControllers([current], direction: .forward, animated: false)
             }
             return .min
         }

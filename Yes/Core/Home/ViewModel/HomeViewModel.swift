@@ -65,7 +65,7 @@ class HomeViewModel: ObservableObject {
             
             PhraseUpdater.updateForNewDay(user: &user) {
             }
-            setPhrasesAndVarients(user: user)
+            setPhrasesAndVariants(user: user)
         }
     }
     
@@ -73,44 +73,51 @@ class HomeViewModel: ObservableObject {
     // update lastSignIn and done flag, and push these changes to Firestore.
     func updatePhraseOnNewDay() {
         let calendar = Calendar.current
-        
-        // Check if the user's lastSignIn is not today.
-        if !calendar.isDateInToday(user.lastSignIn) {
-            // Update the streak: if last sign-in was yesterday, increment streak, otherwise reset to 1.
-            if calendar.isDateInYesterday(user.lastSignIn) {
-                user.streak += 1
+        var newUser = user
+
+        // 1) streak & lastSignIn as before
+        if !calendar.isDateInToday(newUser.lastSignIn) {
+            if calendar.isDateInYesterday(newUser.lastSignIn) {
+                newUser.streak += 1
             } else {
-                user.streak = 1
+                newUser.streak = 1
             }
-            // Update lastSignIn to now.
-            user.lastSignIn = Date()
-            userService.updateUser(user) { error in
-                if let error = error {
-                    print("Error updating user in updatePhraseOnNewDay: \(error.localizedDescription)")
+            newUser.lastSignIn = Date()
+            userService.updateUser(newUser) { error in
+                if let e = error {
+                    print("Error updating streak/lastSignIn:", e.localizedDescription)
                 }
             }
         }
-        
-        // Check if the user's updatedPhraseDate is today.
-        if !calendar.isDateInToday(user.updatedPhraseDate) {
-            // Not updated for today – perform daily update.
-            PhraseUpdater.updateForNewDay(user: &user) {
-                // After updating for a new day, update the updatedPhraseDate.
-                self.user.updatedPhraseDate = Date()
-                self.userService.updateUser(self.user) { error in
-                    if let error = error {
-                        print("Error updating user after daily update: \(error.localizedDescription)")
-                    }
-                }
-                print("Daily update performed. Exiting updatePhraseOnNewDay.")
+        print("1")
+        // 2) have we already done today’s phrase?
+        guard !calendar.isDateInToday(newUser.updatedPhraseDate) else {
+            // already updated → just drive the UI
+            setPhrasesAndVariants(user: newUser)
+            print("2")
+            return
+        }
+        print("3")
+        // 3) do the in-out phrase update (synchronous)
+        PhraseUpdater.updateForNewDay(user: &newUser) {
+        }
+
+        // 4) now that `inout` is finished, it’s safe to stamp
+        newUser.updatedPhraseDate = Date()
+        userService.updateUser(newUser) { error in
+            if let e = error {
+                print("Error persisting updatedPhraseDate:", e.localizedDescription)
             }
         }
-        
-        // If the user already updated the phrase today, continue with the normal flow.
-        setPhrasesAndVarients(user: user)
+
+        // 5) push it into your @Published and refresh the UI
+        DispatchQueue.main.async {
+            self.user = newUser
+            self.setPhrasesAndVariants(user: newUser)
+        }
     }
 
-    func setPhrasesAndVarients(user: User) {
+    func setPhrasesAndVariants(user: User) {
         // Get the shared UserDefaults instance.
         guard let defaults = UserDefaults(suiteName: "group.offline.yes") else { return }
         

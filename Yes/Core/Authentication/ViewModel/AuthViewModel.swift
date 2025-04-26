@@ -17,6 +17,8 @@ class AuthViewModel: ObservableObject {
     @Published var userSession: FirebaseAuth.User?
     @Published var didAuthenticateUser = false
     @Published var currentUser: User?
+    @Published var showDeleteAccountError = false
+    @Published var deleteAccountErrorMessage = ""
     
     private var tempUserSession: FirebaseAuth.User?
     private let service = UserService()
@@ -34,6 +36,41 @@ class AuthViewModel: ObservableObject {
         try? Auth.auth().signOut()
     }
     
+    func deleteAccount() {
+            guard let user = Auth.auth().currentUser else {
+                print("No authenticated user to delete.")
+                return
+            }
+            let uid = user.uid
+            let db = Firestore.firestore()
+
+            // 1) Delete the Firestore document
+            db.collection("users").document(uid).delete { [weak self] error in
+                if let error = error {
+                    print("Error deleting Firestore user doc:", error.localizedDescription)
+                    return
+                }
+                print("Firestore user document deleted.")
+
+                // 2) Delete the Auth user
+                user.delete { error in
+                    if let nsErr = error as NSError?,
+                         nsErr.code == AuthErrorCode.requiresRecentLogin.rawValue {
+                        DispatchQueue.main.async {
+                            self?.deleteAccountErrorMessage = "To delete your account, please sign in again and then retry."
+                            self?.showDeleteAccountError = true
+                        }
+                        return
+                      }
+
+                    print("Firebase Auth user deleted.")
+                    // 3) Clean up local state
+                    DispatchQueue.main.async {
+                        self?.signOut()
+                    }
+                }
+            }
+        }
     func fetchUser() {
         guard let uid = self.userSession?.uid else { return }
         service.fetchUser(withUid: uid) { user in
