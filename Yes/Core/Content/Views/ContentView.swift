@@ -9,13 +9,16 @@ import SwiftUI
 import UIKit
 
 struct ContentView: View {
-    @EnvironmentObject var viewModel: AuthViewModel
+    @StateObject var viewModel = ContentViewModel()
     @AppStorage("hasSeenWidgetInstructions") private var hasSeenWidgetInstructions = false
+    private var currentUser: User? {
+        return viewModel.currentUser
+    }
 
     var body: some View {
         Group {
             if viewModel.userSession != nil {
-                if let user = viewModel.currentUser {
+                if let user = currentUser {
                     if !hasSeenWidgetInstructions {
                         WidgetInstructionsView {
                             hasSeenWidgetInstructions = true
@@ -43,8 +46,8 @@ struct AuthenticatedContentView: View {
     
     var pages: [UIViewController] {
         [
-            UIHostingController(rootView: HomeView(user: user)),
-            UIHostingController(rootView: StreakView(user: user))
+            UIHostingController(rootView: HomeView()),
+            UIHostingController(rootView: StreakView())
         ]
     }
 

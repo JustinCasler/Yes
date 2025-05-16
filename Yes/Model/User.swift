@@ -10,7 +10,7 @@ import FirebaseFirestore
 
 struct User: Identifiable, Decodable {
     @DocumentID var id: String?
-    let fullName: String
+    let fullName: String?
     var streak: Int
     var phrases: [Int]
     var rerolls: Int

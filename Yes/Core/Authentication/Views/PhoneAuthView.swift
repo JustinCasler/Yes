@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct PhoneAuthView: View {
-    @EnvironmentObject var viewModel: AuthViewModel
     @Environment(\.dismiss) var dismiss
     @State private var selectedCountryCode: String = "+1"
     @State private var phoneNumber: String = ""
@@ -70,7 +69,7 @@ struct PhoneAuthView: View {
 
                     Button("Send Verification Code") {
                         let fullPhoneNumber = "\(selectedCountryCode) \(phoneNumber)"
-                        viewModel.sendPhoneVerificationCode(phoneNumber: fullPhoneNumber) { success in
+                        AuthViewModel.shared.sendPhoneVerificationCode(phoneNumber: fullPhoneNumber) { success in
                             if success {
                                 withAnimation {
                                     isCodeSent = true
@@ -90,7 +89,7 @@ struct PhoneAuthView: View {
 
                     Button("Verify Code") {
                         let verificationCode = otpDigits.joined()
-                        viewModel.verifySMSCode(verificationCode: verificationCode) { success in
+                        AuthViewModel.shared.verifySMSCode(verificationCode: verificationCode) { success in
                             if success {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                                     dismiss()
@@ -149,10 +148,4 @@ struct PhoneAuthView: View {
         return result
     }
 }
-
-struct PhoneAuthView_Previews: PreviewProvider {
-    static var previews: some View {
-        PhoneAuthView()
-            .environmentObject(AuthViewModel())
-    }
-}
+ 

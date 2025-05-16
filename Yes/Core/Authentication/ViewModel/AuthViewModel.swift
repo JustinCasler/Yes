@@ -15,20 +15,13 @@ import FirebaseMessaging
 class AuthViewModel: ObservableObject {
     static let shared = AuthViewModel()
     @Published var userSession: FirebaseAuth.User?
-    @Published var didAuthenticateUser = false
-    @Published var currentUser: User?
     @Published var showDeleteAccountError = false
     @Published var deleteAccountErrorMessage = ""
-    
-    private var tempUserSession: FirebaseAuth.User?
-    private let service = UserService()
-    
     // Store the nonce used for Apple sign in.
     var currentNonce: String?
     
     init(){
         self.userSession = Auth.auth().currentUser
-        self.fetchUser()
     }
     
     func signOut() {
@@ -50,7 +43,6 @@ class AuthViewModel: ObservableObject {
                     print("Error deleting Firestore user doc:", error.localizedDescription)
                     return
                 }
-                print("Firestore user document deleted.")
 
                 // 2) Delete the Auth user
                 user.delete { error in
@@ -63,7 +55,6 @@ class AuthViewModel: ObservableObject {
                         return
                       }
 
-                    print("Firebase Auth user deleted.")
                     // 3) Clean up local state
                     DispatchQueue.main.async {
                         self?.signOut()
@@ -71,23 +62,7 @@ class AuthViewModel: ObservableObject {
                 }
             }
         }
-    func fetchUser() {
-        guard let uid = self.userSession?.uid else { return }
-        service.fetchUser(withUid: uid) { user in
-            self.currentUser = user
-        }
-    }
     
-    func backgroundFetchUser(completion: @escaping (User?) -> Void) {
-        guard let uid = self.userSession?.uid else {
-            completion(nil)
-            return
-        }
-        service.fetchUser(withUid: uid) { user in
-            self.currentUser = user
-            completion(user)
-        }
-    }
     
     // MARK: - Apple Sign In Integration
     
@@ -97,127 +72,137 @@ class AuthViewModel: ObservableObject {
         currentNonce = nonce
         request.requestedScopes = [.fullName, .email]
         request.nonce = sha256(nonce)
-        print("Finished configuration")
     }
     
     /// Handle the result of the Apple sign in process.
     func signInWithApple(result: Result<ASAuthorization, Error>) {
         switch result {
         case .success(let auth):
-            switch auth.credential {
-            case let appleIDCredential as ASAuthorizationAppleIDCredential:
-                guard let appleIDToken = appleIDCredential.identityToken else {
-                    print("Unable to fetch identity token")
-                    return
-                }
-                guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
-                    print("Unable to serialize token string from data")
-                    return
-                }
-                
-                let credential = OAuthProvider.appleCredential(
-                    withIDToken: idTokenString,
-                    rawNonce: currentNonce,
-                    fullName: appleIDCredential.fullName
-                )
-                
-                Auth.auth().signIn(with: credential) { [weak self] result, error in
-                    if let error = error {
-                        print("Firebase sign in error: \(error.localizedDescription)")
-                        return
-                    }
-                    guard let user = result?.user else { return }
-                    self?.userSession = user
-                    
-                    // Create a user document if needed using Apple credentials.
-                    self?.createUserIfNeeded(user: user, appleCredential: appleIDCredential) {
-                        self?.updateUserFCMTokenAndTimezone()
-                        self?.fetchUser()
-                        print("User signed in with Apple successfully")
-                    }
-                }
-                
-            default:
+            guard let appleIDCredential = auth.credential as? ASAuthorizationAppleIDCredential else {
                 print("Received unknown authorization credential type")
+                return
             }
+            guard
+                let appleIDToken = appleIDCredential.identityToken,
+                let idTokenString = String(data: appleIDToken, encoding: .utf8)
+            else {
+                print("Unable to fetch or serialize identity token")
+                return
+            }
+
+            let credential = OAuthProvider.appleCredential(
+                withIDToken:    idTokenString,
+                rawNonce:       currentNonce,
+                fullName:       appleIDCredential.fullName
+            )
+
+            Auth.auth().signIn(with: credential) { [weak self] authResult, error in
+                guard let self = self else { return }
+                if let error = error {
+                    print("Firebase sign in error: \(error.localizedDescription)")
+                    return
+                }
+                guard let firebaseUser = authResult?.user else {
+                    print("No user returned from Firebase after sign‑in")
+                    return
+                }
+
+                // Kick off an async task to write your Firestore document and update token/timezone.
+                Task {
+                    do {
+                        // 1) Ensure your createUserIfNeeded is async throws
+                        try await self.createUserIfNeeded(user: firebaseUser,
+                                                          appleCredential: appleIDCredential)
+
+                        // 2) Ensure updateUserFCMTokenAndTimezone is async throws too
+                        try await self.updateUserFCMTokenAndTimezone()
+
+                        // 3) Only now publish the session on the main actor
+                        await MainActor.run {
+                            self.userSession = firebaseUser
+                        }
+                        print("✅ User signed in and Firestore sync complete")
+
+                    } catch {
+                        print("❌ post‑sign‑in flow failed:", error)
+                    }
+                }
+            }
+
         case .failure(let error):
             print("Sign in with Apple failed: \(error.localizedDescription)")
         }
     }
+
     
     /// Create a new Firestore user document for Apple sign in if one doesn’t exist.
     private func createUserIfNeeded(user: FirebaseAuth.User,
-                                    appleCredential: ASAuthorizationAppleIDCredential,
-                                    completion: @escaping () -> Void) {
-        let docRef = Firestore.firestore().collection("users").document(user.uid)
-        docRef.getDocument { document, error in
-            if let document = document, document.exists {
-                print("User document already exists.")
-                completion()
-            } else {
-                let fullname = appleCredential.fullName?.formatted() ?? "User"
-                let email = appleCredential.email ?? ""
-                let jan1_2025 = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 1))!
-                let data: [String: Any] = [
-                    "id": user.uid,
-                    "fullName": fullname,
-                    "email": email,
-                    "streak": 1,
-                    "phrases": [],
-                    "rerolls": 1,
-                    "rerollDate": Date(),
-                    "lastSignIn": jan1_2025,
-                    "done": false,
-                    "fcmToken": Messaging.messaging().fcmToken ?? "",
-                    "timezone": TimeZone.current.identifier,
-                    "updatedPhraseDate": jan1_2025  // Initialize updatedPhraseDate
-                ]
-                docRef.setData(data) { error in
-                    if let error = error {
-                        print("Error creating user document: \(error.localizedDescription)")
-                    } else {
-                        print("User document created successfully.")
-                    }
-                    completion()
-                }
-            }
+                                    appleCredential: ASAuthorizationAppleIDCredential) async throws {
+        let docRef = Firestore.firestore()
+                             .collection("users")
+                             .document(user.uid)
+        
+        // Firestore’s async API:
+        let snapshot = try await docRef.getDocument()
+        if snapshot.exists {
+            print("User document already exists.")
+            return
         }
+        
+        let fullname = appleCredential.fullName?.formatted() ?? "User"
+        let email    = appleCredential.email ?? ""
+        let jan1_2025 = Calendar.current
+                             .date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        
+        let data: [String: Any] = [
+            "id":                user.uid,
+            "fullName":          fullname,
+            "streak":            1,
+            "phrases":           [],
+            "rerolls":           1,
+            "rerollDate":        Date(),
+            "lastSignIn":        jan1_2025,
+            "done":              false,
+            "fcmToken":          Messaging.messaging().fcmToken ?? "",
+            "timezone":          TimeZone.current.identifier,
+            "updatedPhraseDate": jan1_2025
+        ]
+        
+        try await docRef.setData(data)
+        print("User document created successfully.")
     }
     
     /// Create a new Firestore user document for phone sign in if one doesn’t exist.
-    private func createUserIfNeededForPhone(user: FirebaseAuth.User,
-                                            completion: @escaping () -> Void) {
-        let docRef = Firestore.firestore().collection("users").document(user.uid)
-        docRef.getDocument { document, error in
-            if let document = document, document.exists {
-                print("User document already exists.")
-                completion()
-            } else {
-                let jan1_2025 = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 1))!
-                let data: [String: Any] = [
-                    "id": user.uid,
-                    "fullName": "User",
-                    "email": "",
-                    "streak": 1,
-                    "phrases": [],
-                    "rerolls": 1,
-                    "rerollDate": Date(),
-                    "lastSignIn": Date(),
-                    "done": false,
-                    "fcmToken": Messaging.messaging().fcmToken ?? "",
-                    "timezone": TimeZone.current.identifier,
-                    "updatedPhraseDate": jan1_2025  // Initialize updatedPhraseDate
-                ]
-                docRef.setData(data) { error in
-                    if let error = error {
-                        print("Error creating user document: \(error.localizedDescription)")
-                    } else {
-                        print("User document created successfully.")
-                    }
-                    completion()
-                }
-            }
+    private func createUserIfNeededForPhone(user: FirebaseAuth.User) async throws {
+        let docRef = Firestore.firestore()
+                             .collection("users")
+                             .document(user.uid)
+        
+        let snapshot = try await docRef.getDocument()
+        if snapshot.exists {
+            print("User document already exists.")
+            return
         }
+        
+        let jan1_2025 = Calendar.current
+                             .date(from: DateComponents(year: 2025, month: 1, day: 1))!
+        let data: [String: Any] = [
+            "id":                user.uid,
+            "fullName":          "User",
+            "email":             "",
+            "streak":            1,
+            "phrases":           [],
+            "rerolls":           1,
+            "rerollDate":        Date(),
+            "lastSignIn":        Date(),
+            "done":              false,
+            "fcmToken":          Messaging.messaging().fcmToken ?? "",
+            "timezone":          TimeZone.current.identifier,
+            "updatedPhraseDate": jan1_2025
+        ]
+        
+        try await docRef.setData(data)
+        print("User document created successfully.")
     }
 
     
@@ -227,7 +212,6 @@ class AuthViewModel: ObservableObject {
         
         let fcmToken = Messaging.messaging().fcmToken ?? ""
         let timezone = TimeZone.current.identifier
-
         let db = Firestore.firestore()
         db.collection("users").document(userID).updateData([
             "fcmToken": fcmToken,
@@ -285,58 +269,65 @@ class AuthViewModel: ObservableObject {
     }
     
     // MARK: - Phone Number Authentication
-    func sendPhoneVerificationCode(phoneNumber: String, completion: @escaping (Bool) -> Void) {
-        PhoneAuthProvider.provider().verifyPhoneNumber(phoneNumber, uiDelegate: nil) { verificationID, error in
-            if let error = error {
-                let nsError = error as NSError
-                print("Error verifying phone number: \(nsError.localizedDescription)")
-                print("Error code: \(nsError.code)")
-                print("Error details: \(nsError.userInfo)")
-                completion(false)
-                return
-            }
-            if let verificationID = verificationID {
-                UserDefaults.standard.set(verificationID, forKey: "authVerificationID")
-                print("Verification code sent. Verification ID: \(verificationID)")
-            } else {
-                print("No verification ID received and no error reported.")
-            }
-            completion(true)
+    func sendPhoneVerificationCode(phoneNumber: String,
+                                   completion: @escaping (Bool) -> Void) {
+        PhoneAuthProvider.provider()
+            .verifyPhoneNumber(phoneNumber, uiDelegate: nil) { id, error in
+          if let error = error {
+            print("Error verifying phone number:", error.localizedDescription)
+            return completion(false)
+          }
+          if let id = id {
+            UserDefaults.standard.set(id, forKey: "authVerificationID")
+            print("Verification code sent. ID:", id)
+          }
+          completion(true)
         }
     }
 
     /// Verify the SMS code entered by the user and create a user document if needed.
-    func verifySMSCode(verificationCode: String, completion: @escaping (Bool) -> Void) {
-        guard let verificationID = UserDefaults.standard.string(forKey: "authVerificationID") else {
-            print("Missing verification ID.")
-            completion(false)
-            return
+    func verifySMSCode(verificationCode: String,
+                       completion: @escaping (Bool) -> Void) {
+        guard let verificationID = UserDefaults
+                .standard
+                .string(forKey: "authVerificationID") else {
+          print("Missing verification ID.")
+          return completion(false)
         }
-        
-        let credential = PhoneAuthProvider.provider().credential(
-            withVerificationID: verificationID,
-            verificationCode: verificationCode
-        )
-        
+
+        let credential = PhoneAuthProvider.provider()
+            .credential(
+              withVerificationID: verificationID,
+              verificationCode: verificationCode
+            )
+
         Auth.auth().signIn(with: credential) { [weak self] result, error in
-            if let error = error {
-                print("Error signing in with phone auth: \(error.localizedDescription)")
-                completion(false)
-                return
+          guard let self = self else { return }
+          if let error = error {
+            print("Phone auth sign‑in error:", error.localizedDescription)
+            return completion(false)
+          }
+          guard let firebaseUser = result?.user else {
+            print("No user returned from phone sign‑in")
+            return completion(false)
+          }
+
+          // 🚀 only now do we write the Firestore doc, update FCM/timezone, and THEN set userSession
+          Task {
+            do {
+              try await self.createUserIfNeededForPhone(user: firebaseUser)
+              try await self.updateUserFCMTokenAndTimezone()
+              await MainActor.run {
+                self.userSession = firebaseUser
+              }
+              print("✅ User signed in with phone number successfully.")
+              completion(true)
+
+            } catch {
+              print("❌ post‑phone‑sign‑in flow failed:", error)
+              completion(false)
             }
-            guard let user = result?.user else {
-                completion(false)
-                return
-            }
-            self?.userSession = user
-            
-            // Create a user document for phone sign in if needed.
-            self?.createUserIfNeededForPhone(user: user) {
-                self?.updateUserFCMTokenAndTimezone()
-                self?.fetchUser()
-                print("User signed in with phone number successfully.")
-                completion(true)
-            }
+          }
         }
     }
 }

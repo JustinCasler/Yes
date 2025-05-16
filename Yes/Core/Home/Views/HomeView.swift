@@ -8,24 +8,19 @@
 import SwiftUI
 
 struct HomeView: View {
-    @ObservedObject var viewModel: HomeViewModel
-    @ObservedObject var authViewModel = AuthViewModel()
+    @StateObject private var viewModel = HomeViewModel()
     @AppStorage("hasSeenWelcomePopup") private var hasSeenWelcomePopup = false
     @State private var showWelcome = false
 
-
-    let user: User
+    private var currentUser: User? {
+        return viewModel.currentUser
+    }
     let letterSpacing: CGFloat = 4
     let wordSpacing: CGFloat = 16
     let imageSize: CGFloat = 35
     
     var words: [String] {
         viewModel.currentPhrase.components(separatedBy: " ")
-    }
-    
-    init(user: User) {
-        self.user = user
-        self.viewModel = HomeViewModel(user: user)
     }
     
     var body: some View {
@@ -74,11 +69,11 @@ struct HomeView: View {
                             viewModel.performReroll()
                         }) {
                             HStack {
-                                Text("Re-Roll (\(viewModel.user.rerolls))")
+                                Text("Re-Roll (\(currentUser!.rerolls))")
                                 Image(systemName: "arrow.clockwise.circle")
                             }
                         }
-                        .disabled(viewModel.user.rerolls <= 0)
+                        .disabled(currentUser!.rerolls <= 0)
                         
                         Button(action: {
                             let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -87,7 +82,7 @@ struct HomeView: View {
                         }) {
                             HStack {
                                 Text("Done")
-                                Image(systemName: viewModel.user.done ? "checkmark.square" : "square")
+                                Image(systemName: currentUser!.done ? "checkmark.square" : "square")
                             }
                         }
                     }
@@ -112,22 +107,17 @@ struct HomeView: View {
                     showWelcome = true
                 }
             }
-            viewModel.checkRerollEligibility() // Add a reroll if a week has passed.
-            viewModel.updatePhraseOnNewDay()   // Update phrase if last sign-in was yesterday.
+            viewModel.checkRerollEligibility()
+            viewModel.updatePhraseOnNewDay()
+            AuthViewModel.shared.updateUserFCMTokenAndTimezone()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .didPerformDailyUpdate)) { _ in
+            viewModel.setPhrasesAndVariants(user: currentUser!)
         }
     }
 }
-
+/*
 #Preview {
-    HomeView(user: User(
-        id: nil,
-        fullName: "",
-        streak: 2,
-        phrases: [],
-        rerolls: 2,
-        rerollDate: Date(),
-        lastSignIn: Date(),
-        done: false,
-        updatedPhraseDate: Date()
-    ))
+    HomeView()
 }
+*/

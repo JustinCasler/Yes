@@ -10,7 +10,7 @@ import FirebaseAuth
 import WidgetKit
 
 struct PhraseUpdater {
-    static func updateForNewDay(user: inout User, completion: @escaping () -> Void = {}) {
+    static func updateForNewDay(user: inout User) {
         // Reset the done flag for a new day.
         user.done = false
 
@@ -25,16 +25,16 @@ struct PhraseUpdater {
             defaults.set(chosenIndex, forKey: "currentPhraseIndex")
         }
         let newPhrase = Phrases.all[chosenIndex]
-        print("newPhrase: ", newPhrase)
         // Generate letter variants and store them.
         let newVariants = PhraseUpdater.generateLetterVariants(for: newPhrase)
         if let defaults = UserDefaults(suiteName: "group.offline.yes") {
             defaults.set(newVariants, forKey: "savedLetterVariants")
         }
+        NotificationCenter.default.post(name: .didPerformDailyUpdate, object: nil)
 
         // Call the completion handler if provided.
         WidgetCenter.shared.reloadTimelines(ofKind: "YesWidget")
-        completion()
+
     }
     
     static func generateLetterVariants(for phrase: String) -> [Int] {

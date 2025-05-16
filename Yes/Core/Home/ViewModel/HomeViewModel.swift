@@ -6,21 +6,21 @@
 //
 
 import Foundation
-import Firebase
-import FirebaseAuth
-
+import Combine
 class HomeViewModel: ObservableObject {
-    @Published var user: User
-    let userService = UserService()
-    var uid: String?
-    
+    @Published var currentUser: User?
+    private var cancellables = Set<AnyCancellable>()
     @Published var currentPhrase: String = "default"
     @Published var letterVariants: [Int] = []
     
-    init(user: User) {
-        self.user = user
+    init() {
+        setup()
     }
-    
+    private func setup(){
+        UserService.shared.$currentUser.sink { [weak self] user in
+            self?.currentUser = user
+        }.store(in: &cancellables)
+    }
     func generateLetterVariants(for phrase: String) -> [Int] {
         var variants: [Int] = []
         for char in phrase.lowercased() {
@@ -31,16 +31,15 @@ class HomeViewModel: ObservableObject {
         return variants
     }
     
-    // 1. Check if a week has passed since rerollDate.
     // If so, increment rerolls and update rerollDate in Firestore.
     func checkRerollEligibility() {
         let calendar = Calendar.current
-        if let nextEligibleDate = calendar.date(byAdding: .day, value: 7, to: user.rerollDate) {
+        if let nextEligibleDate = calendar.date(byAdding: .day, value: 7, to: currentUser!.rerollDate) {
             if Date() >= nextEligibleDate {
-                user.rerolls += 1
-                user.rerollDate = Date()
+                currentUser!.rerolls += 1
+                currentUser!.rerollDate = Date()
                 
-                userService.updateUser(user) { error in
+                UserService.shared.updateUser(currentUser!) { error in
                     if let error = error {
                         print("Error updating user in checkRerollEligibility: \(error.localizedDescription)")
                     }
@@ -49,62 +48,51 @@ class HomeViewModel: ObservableObject {
         }
     }
     
-    // 2. When the reroll button is clicked, decrement rerolls (if available), pick a new phrase,
     // reset the done property, and update the changes in Firestore.
     func performReroll() {
-        if user.rerolls > 0 {
-            user.rerolls -= 1
+        if currentUser!.rerolls > 0 {
+            currentUser!.rerolls -= 1
             
-            user.done = false
+            currentUser!.done = false
             
-            userService.updateUser(user) { error in
+            UserService.shared.updateUser(currentUser!) { error in
                 if let error = error {
                     print("Error updating user in performReroll: \(error.localizedDescription)")
                 }
             }
             
-            PhraseUpdater.updateForNewDay(user: &user) {
-            }
-            setPhrasesAndVariants(user: user)
+            PhraseUpdater.updateForNewDay(user: &currentUser!)
+            
+            setPhrasesAndVariants(user: currentUser!)
         }
     }
     
-    // 3. When it's a new day (i.e. the user's lastSignIn is not today), update the phrase,
     // update lastSignIn and done flag, and push these changes to Firestore.
     func updatePhraseOnNewDay() {
         let calendar = Calendar.current
-        var newUser = user
+        var newUser = currentUser!
 
-        // 1) streak & lastSignIn as before
         if !calendar.isDateInToday(newUser.lastSignIn) {
             if calendar.isDateInYesterday(newUser.lastSignIn) {
-                newUser.streak += 1
+                
             } else {
                 newUser.streak = 1
             }
-            newUser.lastSignIn = Date()
-            userService.updateUser(newUser) { error in
+            UserService.shared.updateUser(newUser) { error in
                 if let e = error {
                     print("Error updating streak/lastSignIn:", e.localizedDescription)
                 }
             }
         }
-        print("1")
-        // 2) have we already done today’s phrase?
         guard !calendar.isDateInToday(newUser.updatedPhraseDate) else {
             // already updated → just drive the UI
             setPhrasesAndVariants(user: newUser)
-            print("2")
             return
         }
-        print("3")
-        // 3) do the in-out phrase update (synchronous)
-        PhraseUpdater.updateForNewDay(user: &newUser) {
-        }
+        PhraseUpdater.updateForNewDay(user: &newUser)
 
-        // 4) now that `inout` is finished, it’s safe to stamp
         newUser.updatedPhraseDate = Date()
-        userService.updateUser(newUser) { error in
+        UserService.shared.updateUser(newUser) { error in
             if let e = error {
                 print("Error persisting updatedPhraseDate:", e.localizedDescription)
             }
@@ -112,7 +100,7 @@ class HomeViewModel: ObservableObject {
 
         // 5) push it into your @Published and refresh the UI
         DispatchQueue.main.async {
-            self.user = newUser
+            self.currentUser = newUser
             self.setPhrasesAndVariants(user: newUser)
         }
     }
@@ -127,7 +115,6 @@ class HomeViewModel: ObservableObject {
            storedPhraseIndex < Phrases.all.count {
             phrase = Phrases.all[storedPhraseIndex]
         } else {
-            // No stored phrase index found – pick a new phrase.
             let allIndices = Array(0..<Phrases.all.count)
             let usedIndices = user.phrases
             let availableIndices = allIndices.filter { !usedIndices.contains($0) }
@@ -161,9 +148,22 @@ class HomeViewModel: ObservableObject {
     
     // Toggle the done status. If toggled on, add the current phrase's index to the user's phrases array;
     // if toggled off, remove it, then update Firestore.
+    // streak update if done is clicked
+    // lastsignin === last streak day
     func toggleDoneStatus() {
-        user.done.toggle()
-        
+        let calendar = Calendar.current
+
+        currentUser!.done.toggle()
+
+        if currentUser!.done {
+            currentUser!.streak += 1
+            currentUser!.lastSignIn = Date()
+        } else {
+            currentUser!.streak = max(1, currentUser!.streak - 1)
+            if let yesterday = calendar.date(byAdding: .day, value: -1, to: Date()) {
+                currentUser!.lastSignIn = yesterday
+            }
+        }
         let chosenIndex: Int
         if let defaults = UserDefaults(suiteName: "group.offline.yes") {
             chosenIndex = defaults.integer(forKey: "currentPhraseIndex")
@@ -171,17 +171,17 @@ class HomeViewModel: ObservableObject {
             chosenIndex = 0
         }
         
-        if user.done {
-            if user.phrases.last != chosenIndex {
-                user.phrases.append(chosenIndex)
+        if currentUser!.done {
+            if currentUser!.phrases.last != chosenIndex {
+                currentUser!.phrases.append(chosenIndex)
             }
         } else {
-            if let last = user.phrases.last, last == chosenIndex {
-                user.phrases.removeLast()
+            if let last = currentUser!.phrases.last, last == chosenIndex {
+                currentUser!.phrases.removeLast()
             }
         }
         
-        userService.updateUser(user) { error in
+        UserService.shared.updateUser(currentUser!) { error in
             if let error = error {
                 print("Error updating user in toggleDoneStatus: \(error.localizedDescription)")
             }

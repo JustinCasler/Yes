@@ -8,7 +8,7 @@
 import SwiftUI
 struct FlowLayout: Layout {
     var horizontalSpacing: CGFloat = 8
-    var verticalSpacing: CGFloat = 16  // Increased vertical spacing
+    var verticalSpacing: CGFloat = 16
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         var currentRowWidth: CGFloat = 0
@@ -54,7 +54,6 @@ struct TallyGroup: View {
     /// Number of marks in this group (0...5)
     let markCount: Int
     
-    // The total width of 4 lines (each 5 points wide) + spacings = 50
     private let groupWidth: CGFloat = 50
     private let groupHeight: CGFloat = 30
     
@@ -68,7 +67,6 @@ struct TallyGroup: View {
                         .frame(width: 5, height: groupHeight)
                 }
             }
-            // Overlaid slash if markCount == 5
             if markCount == 5 {
                 SlashMark()
                     .stroke(Color.black, lineWidth: 2)
@@ -80,9 +78,8 @@ struct TallyGroup: View {
 }
 
 struct TallyMarksView: View {
-    let count: Int  // The user's streak
+    let count: Int
 
-    // Compute groups of tally marks (each group represents up to 5 marks)
     var groups: [Int] {
         let fullGroups = count / 5
         let remainder = count % 5
@@ -93,9 +90,7 @@ struct TallyMarksView: View {
         return result
     }
     
-    // A simple function to provide a small offset for each tally group
     private func offset(for index: Int) -> CGSize {
-        // A pattern of small offsets that repeats.
         let offsets: [CGSize] = [
             CGSize(width: -2, height: 2),
             CGSize(width: 1, height: -1),

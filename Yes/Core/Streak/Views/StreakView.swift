@@ -8,17 +8,17 @@
 import SwiftUI
 
 struct StreakView: View {
-    let user: User
-    @EnvironmentObject var authViewModel: AuthViewModel
+    @StateObject var viewModel = StreakViewModel()
+    @StateObject private var authVM = AuthViewModel.shared
     @State private var showDeleteConfirmation = false
 
-    init(user: User) {
-        self.user = user
+    private var currentUser: User? {
+        return viewModel.currentUser
     }
 
     var body: some View {
         VStack {
-            TallyMarksView(count: user.streak)
+            TallyMarksView(count: currentUser?.streak ?? 0)
             Spacer()
         }
         .padding(10)
@@ -28,11 +28,10 @@ struct StreakView: View {
                 .scaledToFill()
                 .ignoresSafeArea()
         )
-        // overlay the ellipsis menu in the top-trailing corner
         .overlay(alignment: .topTrailing) {
             Menu {
                 Button("Sign Out", role: .none) {
-                    authViewModel.signOut()
+                    AuthViewModel.shared.signOut()
                 }
                 Button("Delete Account", role: .destructive) {
                     showDeleteConfirmation = true
@@ -43,25 +42,24 @@ struct StreakView: View {
                     .padding()
             }
         }
-        // optional confirmation dialog before deleting
         .confirmationDialog(
             "Are you sure you want to delete your account?",
             isPresented: $showDeleteConfirmation,
             titleVisibility: .visible
         ) {
             Button("Delete Account", role: .destructive) {
-                authViewModel.deleteAccount() // or your own delete logic
+                authVM.deleteAccount()
             }
             Button("Cancel", role: .cancel) { }
         }
         .alert(
           "Couldn’t Delete Account",
-          isPresented: $authViewModel.showDeleteAccountError,
+          isPresented: $authVM.showDeleteAccountError,
           actions: {
             Button("OK", role: .cancel) { }
           },
           message: {
-            Text(authViewModel.deleteAccountErrorMessage)
+            Text(authVM.deleteAccountErrorMessage)
           }
         )
     }

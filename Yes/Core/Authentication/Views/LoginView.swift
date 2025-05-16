@@ -11,7 +11,6 @@ import SwiftUI
 import AuthenticationServices
 
 struct LoginView: View {
-    @EnvironmentObject var viewModel: AuthViewModel
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @State private var path = NavigationPath()
 
@@ -39,10 +38,10 @@ struct LoginView: View {
                     VStack(spacing: 20) {
                         SignInWithAppleButton(
                             onRequest: { request in
-                                viewModel.configureAppleRequest(request: request)
+                                AuthViewModel.shared.configureAppleRequest(request: request)
                             },
                             onCompletion: { result in
-                                viewModel.signInWithApple(result: result)
+                                AuthViewModel.shared.signInWithApple(result: result)
                             }
                         )
                         .signInWithAppleButtonStyle(.white)
@@ -71,16 +70,9 @@ struct LoginView: View {
             .navigationDestination(for: String.self) { value in
                 if value == "phoneAuth" {
                     PhoneAuthView()
-                        .environmentObject(viewModel)
                 }
             }
         }
     }
 }
 
-struct LoginView_Previews: PreviewProvider {
-    static var previews: some View {
-        LoginView()
-            .environmentObject(AuthViewModel())
-    }
-}

@@ -11,7 +11,6 @@ import SwiftUI
 struct TallyMark: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        // A simple vertical line from top to bottom
         path.move(to: CGPoint(x: rect.midX, y: rect.minY))
         path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
         return path

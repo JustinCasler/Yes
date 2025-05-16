@@ -13,7 +13,6 @@ import FirebaseAuth
 import WidgetKit
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
-    let userService = UserService()
     
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
@@ -49,23 +48,21 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 print("✅ FCM Token received: \(token)")
             }
         }
-
-        print("✅ APNs Token received: \(deviceToken.map { String(format: "%02.2hhx", $0) }.joined())")
     }
     
     // Called when Firebase Messaging receives a new token.
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        print("Firebase registration token: \(fcmToken ?? "")")
+        print("messaging")
         guard let newToken = fcmToken else { return }
         
         // Example: Assume you have an instance of your current user accessible through a shared AuthViewModel or similar.
         // Replace "currentUser" with however you access your user object.
-        if var currentUser = AuthViewModel.shared.currentUser {
+        if var currentUser = UserService.shared.currentUser {
             // Update the user model with the new token.
             currentUser.fcmToken = newToken
             
             // Now update the user in your backend/database.
-            userService.updateUser(currentUser) { error in
+            UserService.shared.updateUser(currentUser) { error in
                 if let error = error {
                     print("Error updating user with new fcmToken: \(error.localizedDescription)")
                 } else {
@@ -81,7 +78,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        print("userNotificationCenter")
         completionHandler([.banner, .sound, .badge])
     }
     
@@ -110,17 +106,14 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
 class BackgroundTaskManager {
     static let shared = BackgroundTaskManager()
-    let userService = UserService()
 
     /// Handles the background update when a silent push is received.
     func handleSilentPush() {
-        print("Handling silent push...")
         updateDailyData()
     }
     
     /// Your daily update logic goes here. In this example, we simulate an update and reload widget timelines.
     func updateDailyData() {
-        print("Updating daily data...")
         
         // Only run update logic if a Firebase user is logged in.
         guard Auth.auth().currentUser != nil else {
@@ -128,33 +121,26 @@ class BackgroundTaskManager {
             return
         }
         
-        let authViewModel = AuthViewModel()
-        authViewModel.backgroundFetchUser { fetchedUser in
-            // If backgroundFetchUser returns nil, there's no user to update.
-            guard var user = fetchedUser else {
-                print("No user data available.")
-                return
-            }
+        
+        if var currentUser = UserService.shared.currentUser {
             
             // Check if updatedPhraseDate is already today.
-            if Calendar.current.isDateInToday(user.updatedPhraseDate) {
+            
+            if Calendar.current.isDateInToday(currentUser.updatedPhraseDate) {
                 print("User's updatedPhraseDate is already today. Skipping daily update.")
                 return
             }
             
             // Run the daily update function.
-            PhraseUpdater.updateForNewDay(user: &user) {
-                // Update the user's updatedPhraseDate to today's date.
-                user.updatedPhraseDate = Date()
-                
-                self.userService.updateUser(user) { error in
-                     if let error = error {
-                        print("Error updating user with new updatedPhraseDate: \(error.localizedDescription)")
-                     }
-                }
-                print("Daily update performed. Updated phrase date set to today.")
-                WidgetCenter.shared.reloadTimelines(ofKind: "YesWidget")
+            PhraseUpdater.updateForNewDay(user: &currentUser)
+            
+            currentUser.updatedPhraseDate = Date()
+            UserService.shared.updateUser(currentUser) { error in
+                if let e = error { print(e) }
             }
+
+            // 3) (Optionally) reload widgets again if needed
+            WidgetCenter.shared.reloadTimelines(ofKind: "YesWidget")
         }
     }
 }

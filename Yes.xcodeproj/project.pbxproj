@@ -42,9 +42,12 @@
 		BB343FB82D7BFAA200487488 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB343FB72D7BFAA200487488 /* GoogleService-Info.plist */; };
 		BB65AF002D8E7556000B4A36 /* OTPTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB65AEFF2D8E7556000B4A36 /* OTPTextField.swift */; };
 		BB736AED2D6B98F8001CF1B1 /* PhoneAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB736AEC2D6B98F8001CF1B1 /* PhoneAuthView.swift */; };
+		BBC612B72DD18B9300D3E2E7 /* Notification.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC612B62DD18B9300D3E2E7 /* Notification.swift */; };
 		BBCB97CB2D90A5F2004BAEB4 /* FlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCB97CA2D90A5F1004BAEB4 /* FlowLayout.swift */; };
 		BBCB97CD2D90A956004BAEB4 /* WidgetBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCB97CC2D90A955004BAEB4 /* WidgetBackground.swift */; };
 		BBD293EF2D7168DB00C25C70 /* PhraseUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD293EE2D7168DB00C25C70 /* PhraseUpdater.swift */; };
+		BBDA6B282DC86D8500A8AEEB /* StreakViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDA6B272DC86D8500A8AEEB /* StreakViewModel.swift */; };
+		BBDA6B302DC8702600A8AEEB /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDA6B2F2DC8702600A8AEEB /* ContentViewModel.swift */; };
 		BBE00C532DA3191B00C7D85C /* WidgetInstructionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE00C522DA3191A00C7D85C /* WidgetInstructionsView.swift */; };
 		BBE00C552DA31A1700C7D85C /* WelcomePopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE00C542DA31A1700C7D85C /* WelcomePopupView.swift */; };
 		BBE00C582DA3342A00C7D85C /* RoundedCorner.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE00C572DA3342900C7D85C /* RoundedCorner.swift */; };
@@ -108,9 +111,12 @@
 		BB343FB72D7BFAA200487488 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		BB65AEFF2D8E7556000B4A36 /* OTPTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OTPTextField.swift; sourceTree = "<group>"; };
 		BB736AEC2D6B98F8001CF1B1 /* PhoneAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneAuthView.swift; sourceTree = "<group>"; };
+		BBC612B62DD18B9300D3E2E7 /* Notification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notification.swift; sourceTree = "<group>"; };
 		BBCB97CA2D90A5F1004BAEB4 /* FlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
 		BBCB97CC2D90A955004BAEB4 /* WidgetBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBackground.swift; sourceTree = "<group>"; };
 		BBD293EE2D7168DB00C25C70 /* PhraseUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhraseUpdater.swift; sourceTree = "<group>"; };
+		BBDA6B272DC86D8500A8AEEB /* StreakViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakViewModel.swift; sourceTree = "<group>"; };
+		BBDA6B2F2DC8702600A8AEEB /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
 		BBE00C522DA3191A00C7D85C /* WidgetInstructionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetInstructionsView.swift; sourceTree = "<group>"; };
 		BBE00C542DA31A1700C7D85C /* WelcomePopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomePopupView.swift; sourceTree = "<group>"; };
 		BBE00C572DA3342900C7D85C /* RoundedCorner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedCorner.swift; sourceTree = "<group>"; };
@@ -204,8 +210,8 @@
 		BB18800C2D62EC1E00B95314 /* Streak */ = {
 			isa = PBXGroup;
 			children = (
+				BBDA6B262DC86D6700A8AEEB /* ViewModels */,
 				BB18800E2D62EC5000B95314 /* Views */,
-				BB1880112D62F00E00B95314 /* TallyShapes.swift */,
 			);
 			path = Streak;
 			sourceTree = "<group>";
@@ -215,6 +221,7 @@
 			children = (
 				BB18800F2D62EC7300B95314 /* StreakView.swift */,
 				BB1880132D62F05D00B95314 /* TallyMarksView.swift */,
+				BB1880112D62F00E00B95314 /* TallyShapes.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -234,10 +241,44 @@
 			path = ViewModel;
 			sourceTree = "<group>";
 		};
+		BBDA6B262DC86D6700A8AEEB /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				BBDA6B272DC86D8500A8AEEB /* StreakViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		BBDA6B2C2DC86FE700A8AEEB /* Content */ = {
+			isa = PBXGroup;
+			children = (
+				BBDA6B2E2DC8701800A8AEEB /* ViewModels */,
+				BBDA6B2D2DC8701000A8AEEB /* Views */,
+			);
+			path = Content;
+			sourceTree = "<group>";
+		};
+		BBDA6B2D2DC8701000A8AEEB /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BBFF46392D59975100596592 /* ContentView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		BBDA6B2E2DC8701800A8AEEB /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				BBDA6B2F2DC8702600A8AEEB /* ContentViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
 		BBE00C562DA3341400C7D85C /* Extension */ = {
 			isa = PBXGroup;
 			children = (
 				BBE00C572DA3342900C7D85C /* RoundedCorner.swift */,
+				BBC612B62DD18B9300D3E2E7 /* Notification.swift */,
 			);
 			path = Extension;
 			sourceTree = "<group>";
@@ -297,7 +338,6 @@
 			children = (
 				BB343FB62D7BF5BF00487488 /* YesDebug.entitlements */,
 				BBE8C17E2D6C323B0003F9E8 /* Info.plist */,
-				BBFF46392D59975100596592 /* ContentView.swift */,
 				BBFF46582D5C4C1C00596592 /* App */,
 				BBFF46592D5C4C4000596592 /* Core */,
 				BBFF46552D5C4B9300596592 /* Model */,
@@ -346,6 +386,7 @@
 		BBFF46592D5C4C4000596592 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				BBDA6B2C2DC86FE700A8AEEB /* Content */,
 				BB18800C2D62EC1E00B95314 /* Streak */,
 				BB1880062D614B3900B95314 /* Home */,
 				BBFF465B2D5C4C5B00596592 /* Root */,
@@ -540,7 +581,9 @@
 				BBFF46602D5C4C9F00596592 /* LoginView.swift in Sources */,
 				BB1880082D614B7100B95314 /* HomeView.swift in Sources */,
 				BB18800B2D61547C00B95314 /* Phrases.swift in Sources */,
+				BBDA6B282DC86D8500A8AEEB /* StreakViewModel.swift in Sources */,
 				BB736AED2D6B98F8001CF1B1 /* PhoneAuthView.swift in Sources */,
+				BBC612B72DD18B9300D3E2E7 /* Notification.swift in Sources */,
 				BB1880122D62F00E00B95314 /* TallyShapes.swift in Sources */,
 				BBFF463A2D59975100596592 /* ContentView.swift in Sources */,
 				BBE00C532DA3191B00C7D85C /* WidgetInstructionsView.swift in Sources */,
@@ -550,6 +593,7 @@
 				BBF592E82D681BB500B49CFB /* UserService.swift in Sources */,
 				BBD293EF2D7168DB00C25C70 /* PhraseUpdater.swift in Sources */,
 				BB1880142D62F05D00B95314 /* TallyMarksView.swift in Sources */,
+				BBDA6B302DC8702600A8AEEB /* ContentViewModel.swift in Sources */,
 				BB308B552D66E66700D552A9 /* User.swift in Sources */,
 				BBE00C582DA3342A00C7D85C /* RoundedCorner.swift in Sources */,
 				BBFF46382D59975100596592 /* YesApp.swift in Sources */,
@@ -750,7 +794,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Yes/YesDebug.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"Yes/Preview Content\"";
 				DEVELOPMENT_TEAM = 2T98ZYNZU4;
 				ENABLE_PREVIEWS = YES;
@@ -767,7 +811,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = offline.Yes;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -788,7 +832,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Yes/Yes.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"Yes/Preview Content\"";
 				DEVELOPMENT_TEAM = 2T98ZYNZU4;
 				ENABLE_PREVIEWS = YES;
@@ -805,7 +849,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = offline.Yes;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
